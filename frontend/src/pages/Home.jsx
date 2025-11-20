@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 
 // --- URL DE LA API (Dinámica para Deploy) ---
-
+// Si existe la variable de Vercel la usa, si no, usa localhost
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 // --- ICONOS SVG ---
@@ -149,3 +149,81 @@ function Home() {
       `}</style>
 
       <div style={styles.card}>
+        <div style={styles.header}>
+          <GolfIcon />
+          <h1 style={styles.title}>Golf Tracker</h1>
+          <p style={styles.subtitle}>Configura tu ronda y comienza</p>
+        </div>
+        
+        <label style={styles.labelGeneral}>Seleccionar Club</label>
+        <select style={styles.select} value={selectedCourseId} onChange={(e) => setSelectedCourseId(e.target.value)} disabled={loading}>
+          <option value="">{loading ? "Cargando..." : "Elige una cancha..."}</option>
+          {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+
+        {/* CABECERAS ALINEADAS */}
+        <div style={styles.labelsContainer}>
+            <div style={styles.labelName}>Jugadores</div>
+            <div style={styles.labelHcp}>HCP</div>
+        </div>
+
+        {players.map((player, index) => (
+          <div key={index} style={styles.playerRow}>
+            <div style={styles.inputWrapper}>
+              <div style={styles.inputIcon}><UserIcon /></div>
+              <input type="text" placeholder={`Jugador ${index + 1}`} value={player.name} onChange={(e) => updatePlayer(index, 'name', e.target.value)} style={styles.input} />
+            </div>
+            <input type="number" placeholder="0" value={player.handicap} onChange={(e) => updatePlayer(index, 'handicap', e.target.value)} style={styles.hcpInput} />
+            
+            {players.length > 1 && (
+                <button onClick={() => removePlayer(index)} style={styles.deleteBtn}><TrashIcon /></button>
+            )}
+          </div>
+        ))}
+
+        {players.length < 4 && <button onClick={addPlayerRow} style={styles.addBtn}><PlusIcon /> Agregar otro jugador</button>}
+        
+        <button onClick={handleStartMatch} style={styles.startBtn}>Comenzar Ronda</button>
+
+        {matches.length > 0 && (
+            <>
+                <div style={{ width: '100%', height: '1px', background: '#f1f5f9', margin: '20px 0' }}></div>
+                <button style={styles.historyToggleBtn} onClick={() => setShowHistory(!showHistory)}>
+                    <FolderIcon /> {showHistory ? "Ocultar Historial" : "Ver Partidos Anteriores"} <ChevronDown />
+                </button>
+            </>
+        )}
+      </div>
+
+      {showHistory && matches.length > 0 && (
+        <div style={styles.historyContainer}>
+            <div style={styles.historyHeader}>Partidos Recientes</div>
+            {matches.map(match => (
+                <div key={match.id} style={styles.matchItem} onClick={() => navigate(`/match/${match.id}`)}>
+                    <div style={styles.matchInfo}>
+                        <span style={styles.matchCourse}>{match.course?.name}</span>
+                        <span style={styles.matchDate}>
+                            <HistoryIcon /> {match.date.split(' ')[0]} • {match.players.length} Jugadores
+                        </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <button style={styles.resumeBtn}>
+                            Abrir
+                        </button>
+                        <button 
+                            style={styles.deleteMatchBtn} 
+                            onClick={(e) => handleDeleteMatch(e, match.id)}
+                            title="Borrar partido"
+                        >
+                            <TrashIcon />
+                        </button>
+                    </div>
+                </div>
+            ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default Home
