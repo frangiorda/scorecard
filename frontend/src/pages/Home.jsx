@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
+
+// --- URL DE LA API (Dinámica para Deploy) ---
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
-// --- ICONOS ---
+// --- ICONOS SVG ---
 const UserIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#94a3b8' }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
 const TrashIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
 const PlusIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -24,16 +27,19 @@ function Home() {
   const [showHistory, setShowHistory] = useState(false)
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/courses/')
+    // Cargar Canchas usando la URL dinámica
+    axios.get(`${API_URL}/courses/`)
       .then(res => { setCourses(res.data); setLoading(false) })
-      .catch(err => console.error(err))
+      .catch(err => console.error("Error cargando canchas:", err))
+    
     loadHistory()
   }, [])
 
   const loadHistory = () => {
-    axios.get('http://127.0.0.1:8000/matches/')
+    // Cargar Historial usando la URL dinámica
+    axios.get(`${API_URL}/matches/`)
       .then(res => setMatches(res.data))
-      .catch(err => console.error(err))
+      .catch(err => console.error("Error cargando historial:", err))
   }
 
   const addPlayerRow = () => { if (players.length < 4) setPlayers([...players, { name: '', handicap: 0 }]) }
@@ -56,7 +62,8 @@ function Home() {
     const sanitizedPlayers = validPlayers.map(p => ({ name: p.name, handicap: p.handicap === '' ? 0 : p.handicap }))
     const payload = { course_id: parseInt(selectedCourseId), players: sanitizedPlayers }
 
-    axios.post('http://127.0.0.1:8000/matches/', payload)
+    // Crear partido usando la URL dinámica
+    axios.post(`${API_URL}/matches/`, payload)
       .then(response => navigate(`/match/${response.data.id}`))
       .catch(error => alert("Hubo un problema al crear el partido."))
   }
@@ -64,9 +71,10 @@ function Home() {
   const handleDeleteMatch = (e, matchId) => {
       e.stopPropagation()
       if (window.confirm("¿Eliminar este partido?")) {
-          axios.delete(`http://127.0.0.1:8000/matches/${matchId}`)
+          // Borrar partido usando la URL dinámica
+          axios.delete(`${API_URL}/matches/${matchId}`)
             .then(() => setMatches(matches.filter(m => m.id !== matchId)))
-            .catch(() => alert("Error"))
+            .catch(() => alert("Error al eliminar"))
       }
   }
 
@@ -99,8 +107,7 @@ function Home() {
         display: 'flex', 
         gap: '12px', 
         marginBottom: '8px',
-        // Aquí está el truco: Le damos padding derecho si hay botón de borrar para compensar el espacio
-        paddingRight: players.length > 1 ? '56px' : '0', // 44px del botón + 12px de gap
+        paddingRight: players.length > 1 ? '56px' : '0', 
         transition: 'padding-right 0.2s ease'
     },
     labelName: { flex: 1, fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' },
@@ -110,18 +117,15 @@ function Home() {
     select: { width: '100%', padding: '14px 16px', fontSize: '16px', borderRadius: '14px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#0f172a', marginBottom: '25px', outline: 'none', appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 1rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' },
     
     playerRow: { display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'center' },
-    inputWrapper: { position: 'relative', flex: 1 }, // Flex 1 para ocupar lo que sobre
+    inputWrapper: { position: 'relative', flex: 1 }, 
     inputIcon: { position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' },
     input: { width: '100%', padding: '14px 14px 14px 42px', fontSize: '16px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#fff' },
-    
-    // Input HCP Ancho Fijo para alinear
     hcpInput: { width: '70px', padding: '14px', fontSize: '16px', textAlign: 'center', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#fff' },
     
     deleteBtn: { background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '12px', width: '44px', height: '44px', minWidth: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
     addBtn: { width: '100%', padding: '14px', background: '#f1f5f9', color: '#475569', border: '2px dashed #cbd5e1', borderRadius: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '15px' },
     startBtn: { width: '100%', padding: '18px', background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '16px', fontSize: '18px', fontWeight: '700', cursor: 'pointer', marginTop: '30px', boxShadow: '0 8px 20px -4px rgba(37, 99, 235, 0.4)' },
     
-    // Botones Historial
     historyToggleBtn: { width: '100%', background: 'transparent', border: 'none', color: '#64748b', fontWeight: '600', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '15px', marginTop: '10px', borderRadius: '14px', transition: 'background 0.2s' },
     
     historyContainer: { width: '100%', maxWidth: '480px', animation: 'slideDown 0.3s ease' },
@@ -137,9 +141,7 @@ function Home() {
   return (
     <div style={styles.container}>
       <style>{`
-        /* CSS GLOBAL: BOX-SIZING ES LA CLAVE */
         * { box-sizing: border-box; }
-        
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } 
         input[type=number] { -moz-appearance: textfield; } 
         select:focus, input:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
@@ -147,83 +149,3 @@ function Home() {
       `}</style>
 
       <div style={styles.card}>
-        <div style={styles.header}>
-          <GolfIcon />
-          <h1 style={styles.title}>Golf Tracker</h1>
-          <p style={styles.subtitle}>Configura tu ronda y comienza</p>
-        </div>
-        
-        <label style={styles.labelGeneral}>Seleccionar Club</label>
-        <select style={styles.select} value={selectedCourseId} onChange={(e) => setSelectedCourseId(e.target.value)} disabled={loading}>
-          <option value="">{loading ? "Cargando..." : "Elige una cancha..."}</option>
-          {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-
-        {/* CABECERAS ALINEADAS */}
-        <div style={styles.labelsContainer}>
-            <div style={styles.labelName}>Jugadores</div>
-            <div style={styles.labelHcp}>HCP</div>
-        </div>
-
-        {players.map((player, index) => (
-          <div key={index} style={styles.playerRow}>
-            <div style={styles.inputWrapper}>
-              <div style={styles.inputIcon}><UserIcon /></div>
-              <input type="text" placeholder={`Jugador ${index + 1}`} value={player.name} onChange={(e) => updatePlayer(index, 'name', e.target.value)} style={styles.input} />
-            </div>
-            {/* HCP con ancho fijo */}
-            <input type="number" placeholder="0" value={player.handicap} onChange={(e) => updatePlayer(index, 'handicap', e.target.value)} style={styles.hcpInput} />
-            
-            {/* Botón borrar con ancho fijo */}
-            {players.length > 1 && (
-                <button onClick={() => removePlayer(index)} style={styles.deleteBtn}><TrashIcon /></button>
-            )}
-          </div>
-        ))}
-
-        {players.length < 4 && <button onClick={addPlayerRow} style={styles.addBtn}><PlusIcon /> Agregar otro jugador</button>}
-        
-        <button onClick={handleStartMatch} style={styles.startBtn}>Comenzar Ronda</button>
-
-        {matches.length > 0 && (
-            <>
-                <div style={{ width: '100%', height: '1px', background: '#f1f5f9', margin: '20px 0' }}></div>
-                <button style={styles.historyToggleBtn} onClick={() => setShowHistory(!showHistory)}>
-                    <FolderIcon /> {showHistory ? "Ocultar Historial" : "Ver Partidos Anteriores"} <ChevronDown />
-                </button>
-            </>
-        )}
-      </div>
-
-      {showHistory && matches.length > 0 && (
-        <div style={styles.historyContainer}>
-            <div style={styles.historyHeader}>Partidos Recientes</div>
-            {matches.map(match => (
-                <div key={match.id} style={styles.matchItem} onClick={() => navigate(`/match/${match.id}`)}>
-                    <div style={styles.matchInfo}>
-                        <span style={styles.matchCourse}>{match.course?.name}</span>
-                        <span style={styles.matchDate}>
-                            <HistoryIcon /> {match.date.split(' ')[0]} • {match.players.length} Jugadores
-                        </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <button style={styles.resumeBtn}>
-                            Abrir
-                        </button>
-                        <button 
-                            style={styles.deleteMatchBtn} 
-                            onClick={(e) => handleDeleteMatch(e, match.id)}
-                            title="Borrar partido"
-                        >
-                            <TrashIcon />
-                        </button>
-                    </div>
-                </div>
-            ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-export default Home
